@@ -16,6 +16,19 @@ ANALYSIS_ENGINE_URL = "https://generativelanguage.googleapis.com/v1beta/models/g
 GITLAB_API_URL = "https://gitlab.com/api/v4"
 REVIEWS_FILE = "reviews.json"
 
+def calculate_health_score(review):
+
+    score = 100
+    for issue in review.get('review_report', []):
+        severity = issue.get('severity', '').upper()
+        if severity == 'CRITICAL':
+            score -= 10
+        elif severity == 'MAJOR':
+            score -= 5
+        elif severity == 'MINOR':
+            score -= 2
+    return max(0, score)
+
 def load_reviews():
     if not os.path.exists(REVIEWS_FILE):
         return []
@@ -164,12 +177,10 @@ Description: {pr_body}
 
 def display_review_report(review_data):
     summary = review_data.get("summary", "No summary provided.")
-    # Check if the summary is a list and format it correctly
     if isinstance(summary, list):
         summary = "\n".join([f"* {item}" for item in summary])
 
     issues = review_data.get("review_report") or []
-    # Ensure issues is a list before trying to process it
     if not isinstance(issues, list):
         st.error("Invalid review report format.")
         return
@@ -333,14 +344,6 @@ with tab2:
         df.dropna(subset=['timestamp'], inplace=True)
 
         df['pr_link'] = df.apply(lambda row: f"{row['owner']}/{row['repo']}#{row['pr_number']}", axis=1)
-
-        def calculate_health_score(review):
-            score = 100
-            for issue in review.get('review_report', []):
-                if issue.get('severity') == 'CRITICAL': score -= 10
-                elif issue.get('severity') == 'MAJOR': score -= 5
-                elif issue.get('severity') == 'MINOR': score -= 2
-            return max(0, score)
         
         df['health_score'] = df['review_data'].apply(calculate_health_score)
 
