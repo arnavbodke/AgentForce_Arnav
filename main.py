@@ -366,7 +366,7 @@ with tab2:
     if st.button("Clear Dashboard Data", help="This will permanently delete all saved review history."):
         if os.path.exists(REVIEWS_FILE):
             os.remove(REVIEWS_FILE)
-            st.success("Dashboard Data Cleared")
-            st.experimental_rerun()
+            st.success("Dashboard data cleared successfully! Reloading...")
+            st.rerun()
         else:
             st.warning("No data to clear.")
