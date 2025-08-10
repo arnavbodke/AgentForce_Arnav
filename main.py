@@ -112,7 +112,7 @@ Description: {pr_body}
 
 **Instructions:**
 Return a single JSON object with three top-level keys: 'summary', 'review_report', and 'full_corrected_code'.
-1.  **summary**: A concise, high-level summary of the findings. Format this as a markdown bulleted list.
+1.  **summary**: A concise, high-level summary of the findings as a single markdown string with bullet points.
 2.  **review_report**: An array of objects. For every issue found, create a corresponding object in this array. Each object must include: file_path, line numbers, severity (CRITICAL, MAJOR, MINOR), issue_type, a detailed description, and a 'fix_suggestion_code' snippet.
 3.  **full_corrected_code**: A string containing the complete, corrected code for the file, with all suggestions applied.
 """
@@ -155,22 +155,31 @@ Description: {pr_body}
 {json.dumps(reports, indent=2)}
 
 **Instructions:**
-1.  **summary**: Write a concise overall summary of all findings as a markdown bulleted list.
+1.  **summary**: Write a concise overall summary of all findings as a single markdown string with bullet points.
 2.  **review_report**: For every actionable issue found, create a detailed object in this array. Each object MUST contain: file_path, start_line, end_line, severity (CRITICAL, MAJOR, MINOR), issue_type, description, and a 'fix_suggestion_code' snippet.
 3.  **full_corrected_code**: Based on the original code and all suggestions, generate a string containing the complete, corrected code for the file.
 """
-    with st.spinner("Synthesizing final review..."):
+    with st.spinner("Synthesizing Final Review"):
         return call_ai_engine(synthesis_prompt, expect_json=True)
 
 def display_review_report(review_data):
     summary = review_data.get("summary", "No summary provided.")
+    # Check if the summary is a list and format it correctly
+    if isinstance(summary, list):
+        summary = "\n".join([f"* {item}" for item in summary])
+
     issues = review_data.get("review_report") or []
+    # Ensure issues is a list before trying to process it
+    if not isinstance(issues, list):
+        st.error("Invalid review report format.")
+        return
+    
     full_code = review_data.get("full_corrected_code")
     
     st.subheader("Review Summary")
     st.markdown(summary)
 
-    if not isinstance(issues, list) or not issues:
+    if not issues:
         st.success("No Specific Issues Found")
         return
 
@@ -205,6 +214,7 @@ def display_issue(issue):
     st.markdown(f"**{issue.get('issue_type', 'General')}** at `{issue.get('file_path', 'N/A')}` (Lines: {issue.get('start_line', '?')}-{issue.get('end_line', '?')})")
     st.markdown(f"**Description:** {issue.get('description', 'No description provided.')}")
     if issue.get('fix_suggestion_code'):
+        st.markdown("**Suggestion:**")
         st.code(issue['fix_suggestion_code'], language='python')
     st.markdown("---")
 
@@ -278,7 +288,7 @@ with tab1:
 
         with st.form("code_form"):
             st.markdown("#### Code Input")
-            code_to_review = st.text_area("Code to Review", height=300, placeholder="Paste your code snippet here...")
+            code_to_review = st.text_area("Code to Review", height=300, placeholder="Paste Your Code Snippet Here")
             
             agents = []
             if mode == "Deep Analysis":
@@ -294,7 +304,7 @@ with tab1:
 
         if submitted:
             if not code_to_review.strip():
-                st.error("Please paste some code to review.")
+                st.error("Please Paste Code To Review.")
             elif mode == "Deep Analysis" and not agents:
                 st.error("Please select at least one specialist agent.")
             else:
