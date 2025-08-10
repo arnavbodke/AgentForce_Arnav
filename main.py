@@ -319,7 +319,7 @@ with tab1:
             elif mode == "Deep Analysis" and not agents:
                 st.error("Please select at least one specialist agent.")
             else:
-                with st.spinner("Analyzing code..."):
+                with st.spinner("Analyzing Code"):
                     title = "Direct Code Submission"
                     body = "A code snippet submitted for direct review."
                     
